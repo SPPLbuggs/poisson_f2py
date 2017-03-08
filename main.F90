@@ -12,7 +12,7 @@
     contains
     subroutine run
     integer:: i_global, j_global, i_local, j_local, node, cols(5)
-    real(8):: A_temp(1,5), b_temp, soln
+    real(dp):: A_temp(1,5), b_temp, soln
     
     call petsc_initialize
     
@@ -23,8 +23,8 @@
         i_global = global_idx(node+1,1)
         j_global = global_idx(node+1,2)
         
-        b_temp = 0.d0
-        A_temp = 0.d0
+        b_temp = 0.0_dp
+        A_temp = 0.0_dp
         cols = -5
         
         call laplace(i_local, j_local, type_z(i_global,j_global), &

@@ -1,6 +1,6 @@
     module properties
     implicit none
-    !integer, parameter:: dp=selected_real_kind(15)
+    integer, parameter:: dp=selected_real_kind(15)
     
 #include <petsc/finclude/petscsys.h>
 #include <petsc/finclude/petscvec.h>
@@ -22,6 +22,6 @@
     integer:: neqn, nz, nr, nz_loc
     integer, allocatable :: type_z(:,:), type_r(:,:), global_idx(:,:), &
                             local_idx(:,:), node_global(:,:)
-    real(8), allocatable :: z(:), r(:), phi(:,:)
+    real(dp), allocatable :: z(:), r(:), phi(:,:)
 
     end module properties

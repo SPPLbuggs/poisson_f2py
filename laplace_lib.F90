@@ -6,10 +6,10 @@
 
     subroutine laplace(inl, jnl, side_z, side_r, b_temp)
     integer, intent(in):: inl, jnl, side_z, side_r
-    real(8), intent(out):: b_temp
-    real(8):: dz_p = 0.d0, dz_m = 0.d0
-    real(8):: dr_p = 0.d0, dr_m = 0.d0
-    real(8):: dphi_dz = 0.d0, dphi_dr = 0.d0
+    real(dp), intent(out):: b_temp
+    real(dp):: dz_p = 0, dz_m = 0
+    real(dp):: dr_p = 0, dr_m = 0
+    real(dp):: dphi_dz = 0, dphi_dr = 0
 
 !-----------------------------------------------------------------------
 !*******************POISSON equation***********************
@@ -21,10 +21,10 @@
             dz_m = z(jnl)   - z(jnl-1)
 
             ! term: d^2(phi)/dz^2 (x-term)
-            dphi_dz = 2.d0*phi(inl,jnl+1)/(dz_p &
+            dphi_dz = 2.0_dp*phi(inl,jnl+1)/(dz_p &
             * (dz_p+dz_m)) &
-            - 2.d0*phi(inl,jnl)/(dz_p*dz_m) &
-            + 2.d0*phi(inl,jnl-1)/(dz_m &
+            - 2.0_dp*phi(inl,jnl)/(dz_p*dz_m) &
+            + 2.0_dp*phi(inl,jnl-1)/(dz_m &
             * (dz_p+dz_m))
 
         ! X-dir left (vacuum)
@@ -32,13 +32,13 @@
             dz_p = z(jnl+1) - z(jnl)
 
             ! BC is E_x = 0
-            dphi_dz = 2.d0 * (phi(inl,jnl+1) - phi(inl,jnl)) / dz_p**2.d0
+            dphi_dz = 2.0_dp * (phi(inl,jnl+1) - phi(inl,jnl)) / dz_p**2.0_dp
 
         ! X-dir right (vacuum) is fixed phi = 0
         else if (side_z > 0) then
             dz_m = z(jnl) - z(jnl-1)
 
-            dphi_dz = 2.d0 * (phi(inl,jnl-1) - phi(inl,jnl)) / dz_m**2.d0
+            dphi_dz = 2.0_dp * (phi(inl,jnl-1) - phi(inl,jnl)) / dz_m**2.0_dp
         end if
     end if
 
@@ -49,9 +49,9 @@
             dr_m = r(inl)   - r(inl-1)
 
             ! term: d^2(phi)/dr^2 (r-term)
-            dphi_dr = 2.d0*phi(inl+1,jnl)/(dr_p * (dr_p+dr_m)) &
-            - 2.d0*phi(inl,jnl)/(dr_p*dr_m) &
-            + 2.d0*phi(inl-1,jnl)/(dr_m * (dr_p+dr_m)) &
+            dphi_dr = 2.0_dp*phi(inl+1,jnl)/(dr_p * (dr_p+dr_m)) &
+            - 2.0_dp*phi(inl,jnl)/(dr_p*dr_m) &
+            + 2.0_dp*phi(inl-1,jnl)/(dr_m * (dr_p+dr_m)) &
             + (phi(inl+1,jnl) - phi(inl-1,jnl)) / ( r(inl) * (dr_p + dr_m) )
 
         ! r-dir left (vacuum)
@@ -59,13 +59,13 @@
             dr_p = r(inl+1) - r(inl)
 
             ! BC is E_r = 0
-            dphi_dr = 2.d0 * (phi(inl+1,jnl) - phi(inl,jnl)) / dr_p**2.d0
+            dphi_dr = 2.0_dp * (phi(inl+1,jnl) - phi(inl,jnl)) / dr_p**2.0_dp
 
         ! r-dir right (vacuum) is fixed phi = 0
         else if (side_r > 0) then
             dr_m = r(inl) - r(inl-1)
 
-            dphi_dr = 2.d0 * (phi(inl-1,jnl) - phi(inl,jnl)) / dr_m**2.d0
+            dphi_dr = 2.0_dp * (phi(inl-1,jnl) - phi(inl,jnl)) / dr_m**2.0_dp
         end if
     end if
     
@@ -84,18 +84,18 @@
                     b_temp, cols, A_temp)
     integer, intent(in):: i_local, j_local, i_global, j_global, side_z, side_r
     integer, intent(inout):: cols(5)
-    real(8), intent(in):: b_temp
-    real(8), intent(inout):: A_temp(1,5)
+    real(dp), intent(in):: b_temp
+    real(dp), intent(inout):: A_temp(1,5)
     logical:: zero_perturb
-    real(8):: perturb, b_pert
-    real(8):: temporary_Storage
+    real(dp):: perturb, b_pert
+    real(dp):: temporary_Storage
     integer:: I, J, K, width, k_start, k_stop, cols_idz
     integer, dimension(5,2):: stencil
 
     ! initialize
     cols_idz = 0
     temporary_Storage = 0
-    Perturb = 0.0001
+    Perturb = 1e-4_dp
     stencil = 0
     width = 0
     
