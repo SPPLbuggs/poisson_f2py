@@ -1,4 +1,5 @@
 import numpy as np
+import main
 import sys
 
 def setup_problem(nz,nr,rank,size):
@@ -49,7 +50,7 @@ def setup_problem(nz,nr,rank,size):
     ni = ne
     nm = ne
     nt = ne*Te_init
-    phi = np.zeros([nr,nz],dtype='d',order='F')
+    phi = np.zeros([nr,nz],order='F')
 
     type_z = np.zeros([nr,nz],'int')
     type_r = np.zeros([nr,nz],'int')
@@ -97,8 +98,20 @@ def setup_problem(nz,nr,rank,size):
     z   = z[max(0,nz/size*rank-1):min(nz,nz/size*(rank+1))+1]
     phi = phi[:,max(0,nz/size*rank-1):min(nz,nz/size*(rank+1))+1]
     
-    return neqn,z,type_z,r,type_r,phi,global_idx,local_idx,node_global
+    main.mod.neqn        = neqn
+    main.mod.nz          = nz
+    main.mod.nr          = nr
+    main.mod.nz_loc      = len(z)
+    main.mod.type_z      = type_z
+    main.mod.type_r      = type_r
+    main.mod.global_idx  = global_idx
+    main.mod.local_idx   = local_idx
+    main.mod.node_global = node_global
+    main.mod.z           = z
+    main.mod.r           = r
+    main.mod.phi         = phi
 
+    return r,z,phi
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         sys.exit('Usage: python setup_problem.py -nx # -nr #')

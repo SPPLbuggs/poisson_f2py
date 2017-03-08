@@ -9,7 +9,7 @@ GNU_LIB = -L/usr/lib/x86_64-linux-gnu
 include ${PETSC_DIR}/lib/petsc/conf/variables
 include ${PETSC_DIR}/lib/petsc/conf/rules
 
-objects = laplace_lib.o
+objects = properties.o laplace_lib.o petsc_lib.o
 
 #--------------------------------------------------------------------------
 

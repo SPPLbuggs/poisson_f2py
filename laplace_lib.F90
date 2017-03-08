@@ -1,48 +1,44 @@
-module laplace_lib
-implicit none
+    module laplace_lib
+    use properties
+    implicit none
 
-private
-public laplace, jacobian
+    contains
 
-contains
-
-subroutine laplace(inl, jnl, x, side_x, r, side_r, phi, nx, nr, nx_loc, f_temp)
-    integer, intent(in):: inl, jnl, side_x, nx, side_r, nr, nx_loc
-    real(8), intent(in):: x(nx), r(nr), phi(nr,nx_loc)
-    real(8), intent(out):: f_temp
-    real(8):: dx_p = 0.d0, dx_m = 0.d0
+    subroutine laplace(inl, jnl, side_z, side_r, b_temp)
+    integer, intent(in):: inl, jnl, side_z, side_r
+    real(8), intent(out):: b_temp
+    real(8):: dz_p = 0.d0, dz_m = 0.d0
     real(8):: dr_p = 0.d0, dr_m = 0.d0
-    real(8):: dphi_dx = 0.d0, dphi_dr = 0.d0
-    integer:: i
+    real(8):: dphi_dz = 0.d0, dphi_dr = 0.d0
 
 !-----------------------------------------------------------------------
 !*******************POISSON equation***********************
 !-----------------------------------------------------------------------
-    if (nx > 1) then
+    if (nz > 1) then
         ! X-dir Center
-        if (side_x .eq. 0) then
-            dx_p  = x(jnl+1) - x(jnl)
-            dx_m = x(jnl)   - x(jnl-1)
+        if (side_z .eq. 0) then
+            dz_p  = z(jnl+1) - z(jnl)
+            dz_m = z(jnl)   - z(jnl-1)
 
-            ! term: d^2(phi)/dx^2 (x-term)
-            dphi_dx = 2.d0*phi(inl,jnl+1)/(dx_p &
-            * (dx_p+dx_m)) &
-            - 2.d0*phi(inl,jnl)/(dx_p*dx_m) &
-            + 2.d0*phi(inl,jnl-1)/(dx_m &
-            * (dx_p+dx_m))
+            ! term: d^2(phi)/dz^2 (x-term)
+            dphi_dz = 2.d0*phi(inl,jnl+1)/(dz_p &
+            * (dz_p+dz_m)) &
+            - 2.d0*phi(inl,jnl)/(dz_p*dz_m) &
+            + 2.d0*phi(inl,jnl-1)/(dz_m &
+            * (dz_p+dz_m))
 
         ! X-dir left (vacuum)
-        else if (side_x < 0) then
-            dx_p = x(jnl+1) - x(jnl)
+        else if (side_z < 0) then
+            dz_p = z(jnl+1) - z(jnl)
 
             ! BC is E_x = 0
-            dphi_dx = 2.d0 * (phi(inl,jnl+1) - phi(inl,jnl)) / dx_p**2.d0
+            dphi_dz = 2.d0 * (phi(inl,jnl+1) - phi(inl,jnl)) / dz_p**2.d0
 
         ! X-dir right (vacuum) is fixed phi = 0
-        else if (side_x > 0) then
-            dx_m = x(jnl) - x(jnl-1)
+        else if (side_z > 0) then
+            dz_m = z(jnl) - z(jnl-1)
 
-            dphi_dx = 2.d0 * (phi(inl,jnl-1) - phi(inl,jnl)) / dx_m**2.d0
+            dphi_dz = 2.d0 * (phi(inl,jnl-1) - phi(inl,jnl)) / dz_m**2.d0
         end if
     end if
 
@@ -74,31 +70,30 @@ subroutine laplace(inl, jnl, x, side_x, r, side_r, phi, nx, nr, nx_loc, f_temp)
     end if
     
     !if (rank == 1) then
-    !write(*,'(4I5)') inl,jnl,side_x,side_r
+    !write(*,'(4I5)') inl,jnl,side_z,side_r
     !write(*,'(2F5.1)') dr_p, dr_m
     !write(*,'(5F5.1)') phi(inl,jnl+1), phi(inl,jnl), phi(inl,jnl+1)
-    !write(*,'(3F5.1)') dphi_dx, dphi_dr, max(dx_p,dx_m,dr_p,dr_m)
+    !write(*,'(3F5.1)') dphi_dz, dphi_dr, max(dz_p,dz_m,dr_p,dr_m)
     !read(*,*) i
     !end if
-    f_temp = (dphi_dx + dphi_dr) * max(dx_p,dx_m,dr_p,dr_m)
+    b_temp = (dphi_dz + dphi_dr) * max(dz_p,dz_m,dr_p,dr_m)
 
-end subroutine laplace
+    end subroutine laplace
 
-subroutine jacobian(i_local, j_local, i_global, j_global, z, side_z, r, side_r, phi, &
-                    nz, nr, nz_loc, neqn, node_global, b_temp, cols, A_temp)
-    integer, intent(in):: i_local, j_local, i_global, j_global, side_z, side_r, &
-                          nz, nr, nz_loc, neqn, node_global(nr,nz)
+    subroutine jacobian(i_local, j_local, i_global, j_global, side_z, side_r, &
+                    b_temp, cols, A_temp)
+    integer, intent(in):: i_local, j_local, i_global, j_global, side_z, side_r
     integer, intent(inout):: cols(5)
-    real(8), intent(in):: z(nz), r(nr), b_temp
-    real(8), intent(inout):: phi(nr,nz_loc), A_temp(1,5)
+    real(8), intent(in):: b_temp
+    real(8), intent(inout):: A_temp(1,5)
     logical:: zero_perturb
     real(8):: perturb, b_pert
     real(8):: temporary_Storage
-    integer:: I, J, K, width, k_start, k_stop, cols_idx
+    integer:: I, J, K, width, k_start, k_stop, cols_idz
     integer, dimension(5,2):: stencil
 
     ! initialize
-    cols_idx = 0
+    cols_idz = 0
     temporary_Storage = 0
     Perturb = 0.0001
     stencil = 0
@@ -149,7 +144,7 @@ subroutine jacobian(i_local, j_local, i_global, j_global, z, side_z, r, side_r, 
 !-----------------------------------------------------------------------
 !*******************JACOBIAN SEtUP*************************
 !-----------------------------------------------------------------------
-        cols_idx = cols_idx + 1
+        cols_idz = cols_idz + 1
         temporary_Storage = phi(I,J)
         if (Abs(phi(I,J)) > 0) then
             phi(I,J) = phi(I,J) + &
@@ -158,23 +153,21 @@ subroutine jacobian(i_local, j_local, i_global, j_global, z, side_z, r, side_r, 
             zero_perturb = .true.
             phi(I,J) = perturb
         end if
-        call laplace(i_local, j_local, z, side_z, r, side_r, phi, &
-                     nz, nr, nz_loc, b_pert)
+        call laplace(i_local, j_local, side_z, side_r, b_pert)
         if (.not. zero_perturb) then
             phi(I,J) = temporary_Storage
         else
             phi(I,J) = 1
         end if
         
-        cols(cols_idx) = node_global(i_global + stencil(k,1), &
+        cols(cols_idz) = node_global(i_global + stencil(k,1), &
                                      j_global + stencil(k,2)) - 1
-        A_temp(1,cols_idx) = (b_pert - b_temp)/(phi(I,J)*perturb)
+        A_temp(1,cols_idz) = (b_pert - b_temp)/(phi(I,J)*perturb)
         
         if (Zero_Perturb) then
             phi(I,J) = temporary_Storage
         end if
     end DO
-end subroutine jacobian
-end module laplace_lib
-
+    end subroutine jacobian
+    end module laplace_lib
 

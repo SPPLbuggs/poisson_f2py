@@ -11,7 +11,7 @@ rank = comm.rank
 size = comm.size
 
 # grid spacing
-nz,nr = 100,100
+nz,nr = 40,40
 
 for i in range(1, len(sys.argv)/2+1):
         key = 2*i-1
@@ -29,9 +29,10 @@ if nz%size != 0:
 
 
 # setup problem
-neqn,z,type_z,r,type_r,phi,global_idx,local_idx,node_global = setup_problem(nz,nr,rank,size)
+r,z,phi = setup_problem(nz,nr,rank,size)
 
-main.main(neqn,z,type_z,r,type_r,phi,local_idx,global_idx,node_global)
+
+main.mod.run()
 
 if rank == 0:
     print('Elapsed time = {:.2f} sec'.format(time.time()-start))
@@ -47,8 +48,8 @@ if rank == size-1:
 else:
     Iend = -1
 
-#print phi[:,Istart:Iend].T
-#print z[Istart:Iend]
+phi = main.mod.phi
+
 phi_global = np.zeros([nz,nr],dtype='d')
 z_global   = np.zeros(nz,dtype='d')
 comm.Allgather([phi[:,Istart:Iend].T,MPI.DOUBLE], [phi_global, MPI.DOUBLE])
@@ -57,7 +58,7 @@ comm.Allgather([z[Istart:Iend].T,MPI.DOUBLE], [z_global, MPI.DOUBLE])
 if rank == 0:
     import matplotlib.pyplot as plt
     plt.figure()
-    plt.contourf(r,z_global,phi_global)
+    plt.contourf(r,z_global,phi_global,30)
     plt.colorbar()
     plt.xlabel('Radius (mm)')
     plt.ylabel('Z-axis (mm)')
